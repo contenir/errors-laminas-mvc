@@ -32,6 +32,10 @@
             "options": {
                 "symlink": true
             }
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/contenir/errors"
         }
     ],
     "extra": {
