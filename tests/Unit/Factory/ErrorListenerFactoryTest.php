@@ -123,6 +123,69 @@ final class ErrorListenerFactoryTest extends TestCase
         self::assertInstanceOf(ErrorListener::class, $listener);
     }
 
+    public function testBuildsInMemoryRepositoryFromConfigPagesWhenNoServiceRegistered(): void
+    {
+        // Site doesn't register ErrorPageRepositoryInterface — factory falls
+        // back to building one from the merged config (Laminas auto-merges
+        // config/autoload/errors.local.php into $config['errors']['pages']).
+        $container = new ArrayContainer([
+            'config' => [
+                'errors' => [
+                    'pages' => [
+                        404 => ['title' => 'Lost', 'body' => '<p>x</p>'],
+                        500 => ['title' => 'Boom', 'body' => ''],
+                    ],
+                ],
+            ],
+        ]);
+
+        $listener = (new ErrorListenerFactory())($container);
+        $event    = $this->eventWith(404);
+        $listener($event);
+
+        self::assertSame('Lost', $event->getResult()->getVariable('title'));
+        self::assertSame('<p>x</p>', $event->getResult()->getVariable('body'));
+    }
+
+    public function testFallbackRepositoryDoesNotInterceptWhenStatusIsUnconfigured(): void
+    {
+        $container = new ArrayContainer([
+            'config' => [
+                'errors' => [
+                    'pages' => [
+                        404 => ['title' => 'Lost', 'body' => ''],
+                    ],
+                ],
+            ],
+        ]);
+
+        $listener = (new ErrorListenerFactory())($container);
+        $event    = $this->eventWith(500);
+        $listener($event);
+
+        self::assertNull($event->getResult(), 'Unconfigured statuses pass through to the framework default.');
+    }
+
+    public function testFallbackRepositorySkipsRowsWithNonIntegerKeys(): void
+    {
+        $container = new ArrayContainer([
+            'config' => [
+                'errors' => [
+                    'pages' => [
+                        'oops'  => ['title' => 'Bad', 'body' => ''],
+                        404 => ['title' => 'Lost', 'body' => ''],
+                    ],
+                ],
+            ],
+        ]);
+
+        $listener = (new ErrorListenerFactory())($container);
+        $event    = $this->eventWith(404);
+        $listener($event);
+
+        self::assertSame('Lost', $event->getResult()->getVariable('title'));
+    }
+
     public function testCustomLoggerInstanceReceivesLogCalls(): void
     {
         $logger = $this->createMock(LoggerInterface::class);

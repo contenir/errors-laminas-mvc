@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Contenir\Errors\Laminas\Mvc;
 
-use Contenir\Errors\ErrorPageRepositoryInterface;
-
 /**
  * Returns the merged config consumed by Module::getConfig().
  *
@@ -35,8 +33,7 @@ final class ConfigProvider
     {
         return [
             'factories' => [
-                ErrorPageRepositoryInterface::class => Factory\FileRepositoryFactory::class,
-                Listener\ErrorListener::class       => Factory\ErrorListenerFactory::class,
+                Listener\ErrorListener::class => Factory\ErrorListenerFactory::class,
             ],
         ];
     }
@@ -47,7 +44,6 @@ final class ConfigProvider
     public function getErrorsDefaults(): array
     {
         return [
-            'file'          => null,
             'view_template' => self::DEFAULT_VIEW_TEMPLATE,
             'logger'        => null,
         ];

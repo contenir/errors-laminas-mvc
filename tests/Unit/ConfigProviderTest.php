@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace Contenir\Errors\Laminas\Mvc\Tests\Unit;
 
-use Contenir\Errors\ErrorPageRepositoryInterface;
 use Contenir\Errors\Laminas\Mvc\ConfigProvider;
 use Contenir\Errors\Laminas\Mvc\Factory\ErrorListenerFactory;
-use Contenir\Errors\Laminas\Mvc\Factory\FileRepositoryFactory;
 use Contenir\Errors\Laminas\Mvc\Listener\ErrorListener;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
@@ -24,16 +22,6 @@ final class ConfigProviderTest extends TestCase
         self::assertArrayHasKey('view_manager', $config);
     }
 
-    public function testRegistersRepositoryFactory(): void
-    {
-        $deps = (new ConfigProvider())->getDependencies();
-
-        self::assertSame(
-            FileRepositoryFactory::class,
-            $deps['factories'][ErrorPageRepositoryInterface::class]
-        );
-    }
-
     public function testRegistersListenerFactory(): void
     {
         $deps = (new ConfigProvider())->getDependencies();
@@ -48,7 +36,6 @@ final class ConfigProviderTest extends TestCase
     {
         $defaults = (new ConfigProvider())->getErrorsDefaults();
 
-        self::assertArrayHasKey('file', $defaults);
         self::assertArrayHasKey('view_template', $defaults);
         self::assertArrayHasKey('logger', $defaults);
     }
@@ -57,7 +44,6 @@ final class ConfigProviderTest extends TestCase
     {
         $defaults = (new ConfigProvider())->getErrorsDefaults();
 
-        self::assertNull($defaults['file']);
         self::assertNull($defaults['logger']);
         self::assertSame('contenir/errors/fault', $defaults['view_template']);
     }
