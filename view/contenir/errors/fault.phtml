@@ -1,0 +1,38 @@
+<?php
+
+/**
+ * Default error-page view shipped by contenir/errors-laminas-mvc.
+ *
+ * Variables:
+ *   - $status int    HTTP status code (e.g. 404)
+ *   - $title  string Plain-text title written by the admin
+ *   - $body   string Sanitized HTML fragment written by the admin (inline only)
+ *
+ * Override by setting `errors.view_template` to a Site-owned template name.
+ */
+
+$status = (int) ($status ?? 500);
+$title  = (string) ($title ?? '');
+$body   = (string) ($body ?? '');
+$head   = $title !== '' ? $title : sprintf('Error %d', $status);
+?><!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex">
+    <title><?= $this->escapeHtml($head) ?></title>
+</head>
+<body>
+    <div class="fault fault--<?= $status ?>">
+        <p class="fault__status"><?= $status ?></p>
+        <?php if ($title !== ''): ?>
+            <h1 class="fault__title"><?= $this->escapeHtml($title) ?></h1>
+        <?php endif ?>
+        <?php if ($body !== ''): ?>
+            <div class="fault__body"><?= $body /* trusted HTML authored by admin */ ?></div>
+        <?php endif ?>
+        <a class="fault__home" href="/">Return home</a>
+    </div>
+</body>
+</html>
