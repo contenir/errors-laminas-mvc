@@ -2,7 +2,6 @@
     "name": "contenir/errors-laminas-mvc",
     "description": "Laminas MVC adapter for contenir/errors — swaps the default error rendering with admin-authored per-status pages.",
     "type": "library",
-    "version": "0.1.0",
     "license": "MIT",
     "require": {
         "php": "^8.1 || ^8.2 || ^8.3",

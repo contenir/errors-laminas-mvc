@@ -74,7 +74,3 @@ Your template receives:
 
 The body is *trusted* — sanitization is the writer's responsibility (see
 the admin-side wiring in the consuming CMS). Render with `<?= $body ?>`.
-
-## License
-
-MIT
