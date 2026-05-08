@@ -31,6 +31,15 @@ final class ErrorListener
 {
     public const DEFAULT_VIEW_TEMPLATE = 'contenir/errors/fault';
 
+    /**
+     * Event name used to signal page-cache opt-out. Matches the
+     * EVENT_DISABLE constant published by contenir/cache-laminas-mvc.
+     * Hardcoded here so this package doesn't take a hard dependency on
+     * the cache adapter; if cache-laminas-mvc isn't installed, firing
+     * the event is a harmless no-op.
+     */
+    private const PAGECACHE_DISABLE_EVENT = 'pagecache.disable';
+
     public function __construct(
         private readonly ErrorPageRepositoryInterface $repository,
         private readonly string $viewTemplate = self::DEFAULT_VIEW_TEMPLATE,
@@ -50,6 +59,7 @@ final class ErrorListener
             return;
         }
 
+        $this->disablePageCache($event);
         $this->log($event, $status);
 
         $page = $this->repository->get($status);
@@ -70,6 +80,17 @@ final class ErrorListener
 
         $event->setResult($viewModel);
         $event->setViewModel($viewModel);
+    }
+
+    /**
+     * Tell any listening page-cache that this 4xx/5xx response must not
+     * be stored. cache-laminas-mvc's CacheStrategy listens to this event
+     * on the same identifier(s) it uses for dispatch/finish; on receipt
+     * it flips its disabled flag and onFinish skips storage.
+     */
+    private function disablePageCache(MvcEvent $event): void
+    {
+        $event->getApplication()?->getEventManager()->trigger(self::PAGECACHE_DISABLE_EVENT);
     }
 
     private function log(MvcEvent $event, int $status): void
