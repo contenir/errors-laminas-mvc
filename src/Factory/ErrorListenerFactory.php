@@ -29,10 +29,13 @@ final class ErrorListenerFactory
     }
 
     /**
-     * Build an in-memory repository from `config[errors][pages]` (the merged
-     * Laminas config). The data file written by admin lives in
-     * config/autoload/*.local.php and is auto-merged into `$config` at boot,
-     * so there's no need to re-read it from disk on every request.
+     * Build an in-memory repository pre-seeded with the package's built-in
+     * default pages (ConfigProvider::DEFAULT_PAGES) and then layered with
+     * admin-authored pages from config[errors][pages] (auto-merged into
+     * $config from config/autoload/errors.local.php). Admin entries override
+     * defaults per-status, so any status the operator hasn't customised still
+     * renders a presentable page rather than falling through to the
+     * framework's bare default.
      *
      * If a service is registered for ErrorPageRepositoryInterface (e.g. a
      * consumer wants to swap in their own implementation), that wins.
@@ -46,6 +49,14 @@ final class ErrorListenerFactory
         }
 
         $pages = [];
+        foreach (ConfigProvider::DEFAULT_PAGES as $status => $row) {
+            $pages[$status] = new ErrorPage(
+                $status,
+                (string) $row['title'],
+                (string) $row['body'],
+            );
+        }
+
         foreach (($errors['pages'] ?? []) as $status => $row) {
             if (! is_int($status) || ! is_array($row)) {
                 continue;

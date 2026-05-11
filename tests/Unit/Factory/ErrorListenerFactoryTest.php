@@ -6,6 +6,7 @@ namespace Contenir\Errors\Laminas\Mvc\Tests\Unit\Factory;
 
 use Contenir\Errors\ErrorPage;
 use Contenir\Errors\ErrorPageRepositoryInterface;
+use Contenir\Errors\Laminas\Mvc\ConfigProvider;
 use Contenir\Errors\Laminas\Mvc\Factory\ErrorListenerFactory;
 use Contenir\Errors\Laminas\Mvc\Listener\ErrorListener;
 use Contenir\Errors\Laminas\Mvc\Tests\Unit\Factory\Stub\ArrayContainer;
@@ -147,8 +148,9 @@ final class ErrorListenerFactoryTest extends TestCase
         self::assertSame('<p>x</p>', $event->getResult()->getVariable('body'));
     }
 
-    public function testFallbackRepositoryDoesNotInterceptWhenStatusIsUnconfigured(): void
+    public function testFallbackRepositoryDoesNotInterceptStatusOutsideDefaultsAndConfig(): void
     {
+        // 418 isn't in ConfigProvider::DEFAULT_PAGES and isn't admin-configured.
         $container = new ArrayContainer([
             'config' => [
                 'errors' => [
@@ -160,10 +162,57 @@ final class ErrorListenerFactoryTest extends TestCase
         ]);
 
         $listener = (new ErrorListenerFactory())($container);
-        $event    = $this->eventWith(500);
+        $event    = $this->eventWith(418);
         $listener($event);
 
-        self::assertNull($event->getResult(), 'Unconfigured statuses pass through to the framework default.');
+        self::assertNull($event->getResult(), 'Statuses outside seeded defaults and admin config pass through.');
+    }
+
+    public function testFallbackRepositorySeedsBuiltInDefaultsWhenNoAdminPagesConfigured(): void
+    {
+        // No admin pages at all — the listener should still render the
+        // package default for any status in ConfigProvider::DEFAULT_PAGES.
+        $container = new ArrayContainer(['config' => ['errors' => []]]);
+
+        $listener = (new ErrorListenerFactory())($container);
+        $event    = $this->eventWith(404);
+        $listener($event);
+
+        self::assertSame(
+            ConfigProvider::DEFAULT_PAGES[404]['title'],
+            $event->getResult()->getVariable('title'),
+        );
+        self::assertSame(
+            ConfigProvider::DEFAULT_PAGES[404]['body'],
+            $event->getResult()->getVariable('body'),
+        );
+    }
+
+    public function testAdminPagesOverridePackageDefaultsPerStatus(): void
+    {
+        // 404 is admin-configured (should win); 500 is left to defaults.
+        $container = new ArrayContainer([
+            'config' => [
+                'errors' => [
+                    'pages' => [
+                        404 => ['title' => 'Site 404', 'body' => '<p>site</p>'],
+                    ],
+                ],
+            ],
+        ]);
+
+        $listener = (new ErrorListenerFactory())($container);
+
+        $event404 = $this->eventWith(404);
+        $listener($event404);
+        self::assertSame('Site 404', $event404->getResult()->getVariable('title'));
+
+        $event500 = $this->eventWith(500);
+        $listener($event500);
+        self::assertSame(
+            ConfigProvider::DEFAULT_PAGES[500]['title'],
+            $event500->getResult()->getVariable('title'),
+        );
     }
 
     public function testFallbackRepositorySkipsRowsWithNonIntegerKeys(): void

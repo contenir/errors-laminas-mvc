@@ -65,4 +65,21 @@ final class ConfigProviderTest extends TestCase
             (new ConfigProvider())->getErrorsDefaults()['view_template']
         );
     }
+
+    public function testDefaultPagesCoverCommonHttpStatuses(): void
+    {
+        self::assertArrayHasKey(403, ConfigProvider::DEFAULT_PAGES);
+        self::assertArrayHasKey(404, ConfigProvider::DEFAULT_PAGES);
+        self::assertArrayHasKey(500, ConfigProvider::DEFAULT_PAGES);
+    }
+
+    public function testEveryDefaultPageHasNonEmptyTitleAndBody(): void
+    {
+        foreach (ConfigProvider::DEFAULT_PAGES as $row) {
+            self::assertArrayHasKey('title', $row);
+            self::assertArrayHasKey('body', $row);
+            self::assertNotSame('', $row['title']);
+            self::assertNotSame('', $row['body']);
+        }
+    }
 }
