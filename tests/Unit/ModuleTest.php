@@ -34,6 +34,36 @@ final class ModuleTest extends TestCase
         self::assertSame(100, Module::RENDER_PRIORITY);
     }
 
+    public function testRenderErrorPriorityConstantIsExposed(): void
+    {
+        self::assertSame(-100, Module::RENDER_ERROR_PRIORITY);
+    }
+
+    public function testRenderErrorListenerRunsAfterExceptionStrategy(): void
+    {
+        $listener = $this->buildListener();
+        $events   = new EventManager();
+
+        $exceptionStrategyPriority = 1;
+        $statusAtListener          = null;
+        $events->attach(
+            MvcEvent::EVENT_RENDER_ERROR,
+            static function (MvcEvent $event) use (&$statusAtListener): void {
+                $event->getResponse()->setStatusCode(500);
+            },
+            $exceptionStrategyPriority,
+        );
+
+        (new Module())->attachListener($events, $listener);
+
+        $event = $this->buildEvent(200);
+        $event->setName(MvcEvent::EVENT_RENDER_ERROR);
+        $events->triggerEvent($event);
+
+        self::assertInstanceOf(ViewModel::class, $event->getResult());
+        self::assertSame('contenir/errors/fault', $event->getResult()->getTemplate());
+    }
+
     public function testAttachListenerSwapsViewModelOnRender(): void
     {
         $listener = $this->buildListener();
